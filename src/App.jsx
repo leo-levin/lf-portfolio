@@ -39,10 +39,14 @@ function App() {
     }
   }, [])
 
-  // Handle white dot click - expand cloud
+  // Handle white dot click - toggle cloud expand/collapse
   const handleWhiteDotClick = () => {
-    if (dotCloudRef.current && dotCloudRef.current.expandCloud) {
-      dotCloudRef.current.expandCloud()
+    if (dotCloudRef.current) {
+      if (dotCloudRef.current.isExpanded) {
+        dotCloudRef.current.collapseCloud()
+      } else {
+        dotCloudRef.current.expandCloud()
+      }
     }
   }
 

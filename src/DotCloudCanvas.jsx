@@ -150,10 +150,12 @@ const DotCloudCanvas = forwardRef((props, ref) => {
     });
   }, [categoryAlpha, rotationCenter]);
 
-  // Expose expandCloud to parent via ref
+  // Expose expandCloud, collapseCloud, and isExpanded to parent via ref
   useImperativeHandle(ref, () => ({
-    expandCloud
-  }), [expandCloud]);
+    expandCloud,
+    collapseCloud,
+    isExpanded
+  }), [expandCloud, collapseCloud, isExpanded]);
 
   // Handle background click - collapse cloud
   const handleBackgroundClick = useCallback(() => {
