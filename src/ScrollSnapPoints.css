@@ -1,0 +1,9 @@
+.scroll-snap-point {
+  position: absolute;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  scroll-snap-align: start;
+  pointer-events: none;
+  opacity: 0;
+}

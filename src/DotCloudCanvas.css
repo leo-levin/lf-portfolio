@@ -1,0 +1,52 @@
+.dot-cloud-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 60vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: visible;
+}
+
+.category-label {
+  position: absolute;
+  font-family: Monaco, Menlo, 'Courier New', Courier, monospace;
+  color: #17181C;
+  transform-origin: 0 0;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.project-node {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transform-origin: 0 0;
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+}
+
+.node-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: white;
+  flex-shrink: 0;
+}
+
+.node-label {
+  font-family: Monaco, Menlo, 'Courier New', Courier, monospace;
+  color: #17181C;
+  white-space: nowrap;
+  font-size: 1;
+}
+
+@media (max-width: 768px) {
+  .dot-cloud-container {
+    width: 100vw;
+  }
+}
