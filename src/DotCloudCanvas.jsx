@@ -13,6 +13,7 @@ import {
 import './DotCloudCanvas.css';
 
 const DotCloudCanvas = forwardRef((props, ref) => {
+  const { projectSnapPoints } = props;
   const containerRef = useRef(null);
   const nodesRef = useRef([]);
   const animationFrameRef = useRef(null);
@@ -168,9 +169,11 @@ const DotCloudCanvas = forwardRef((props, ref) => {
   const handleNodeClick = useCallback((targetSection, e) => {
     // Stop propagation to prevent background collapse
     e.stopPropagation();
-    const targetElement = document.getElementById(targetSection);
-    if (targetElement) {
-      const targetPosition = targetElement.getBoundingClientRect().top + window.scrollY - 60; // Offset by 60px
+
+    // Use snap point position if available (scroll to snap point, not element)
+    const snapRow = projectSnapPoints?.[targetSection];
+    if (snapRow !== undefined) {
+      const targetPosition = (snapRow - 1) * 80; // Grid rows start at 1, so subtract 1
 
       // Collapse the cloud immediately when clicking a project
       collapseCloud();
@@ -196,7 +199,7 @@ const DotCloudCanvas = forwardRef((props, ref) => {
         }
       });
     }
-  }, [collapseCloud]);
+  }, [collapseCloud, projectSnapPoints]);
 
   // Calculate dynamic rotation center based on viewport
   useEffect(() => {
