@@ -19,7 +19,7 @@
 
 /* When waiting for cloud to disappear, add delay */
 .project-carousel.wait-for-cloud {
-  transition: opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 1.3s;
+  transition: opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s;
 }
 
 .project-carousel::-webkit-scrollbar {

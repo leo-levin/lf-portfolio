@@ -175,8 +175,8 @@ const DotCloudCanvas = forwardRef((props, ref) => {
     if (snapRow !== undefined) {
       const targetPosition = (snapRow - 1) * 80; // Grid rows start at 1, so subtract 1
 
-      // Collapse the cloud immediately when clicking a project
-      collapseCloud();
+      // Don't collapse cloud immediately - let App.jsx handle it after scroll settles
+      // This ensures the cloud waits until we've arrived before collapsing
       setCurrentSection('project');
 
       // Temporarily disable scroll-snap during animation

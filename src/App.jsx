@@ -124,6 +124,7 @@ American television.`,
   const [navPositions, setNavPositions] = useState({}) // Track nav position for each project
   const carouselRefs = useRef({})
   const wasOnHomepageRef = useRef(true) // Track if we were on homepage in previous scroll
+  const isCollapsingRef = useRef(false) // Track if cloud is currently collapsing
 
   // Track scroll position to sync carousel visibility with cloud state and current project
   useEffect(() => {
@@ -133,9 +134,6 @@ American television.`,
     const handleScroll = () => {
       if (scrollTimeout) {
         clearTimeout(scrollTimeout)
-      }
-      if (collapseTimeout) {
-        clearTimeout(collapseTimeout)
       }
 
       scrollTimeout = setTimeout(() => {
@@ -156,18 +154,32 @@ American television.`,
           }
         })
 
-        // Check if we're at a project page (very close to snap point)
-        const isAtProject = closestDistance < 0.5
+        // Check if we're at a project page (close to snap point)
+        const isAtProject = closestDistance < 1.5
 
-        if (isAtProject) {
-          // Delay cloud collapse until scroll has settled (additional 500ms)
-          collapseTimeout = setTimeout(() => {
-            setIsCloudExpanded(false)
-          }, 500)
-        } else {
-          // We're not at a project, keep cloud expanded
-          setIsCloudExpanded(true)
+        // Determine if we should be on homepage (far from all projects)
+        const isHomepage = scrollY < 100
+
+        // Reset collapsing flag whenever cloud is expanded
+        if (isCloudExpanded) {
+          isCollapsingRef.current = false
         }
+
+        if (isHomepage) {
+          // On homepage, keep cloud expanded
+          if (!isCloudExpanded && dotCloudRef.current) {
+            dotCloudRef.current.expandCloud()
+          }
+          setIsCloudExpanded(true)
+        } else if (isAtProject && isCloudExpanded && !isCollapsingRef.current) {
+          // At a project page - collapse immediately (only once)
+          isCollapsingRef.current = true
+          if (dotCloudRef.current) {
+            dotCloudRef.current.collapseCloud()
+          }
+          setIsCloudExpanded(false)
+        }
+        // Don't do anything if we're between pages (scrolling)
 
         // Determine which project we're currently viewing
         if (isAtProject) {
@@ -233,6 +245,8 @@ American television.`,
         dotCloudRef.current.collapseCloud()
         setIsCloudExpanded(false)
       } else {
+        // When expanding cloud, reset collapsing flag so it can collapse again later
+        isCollapsingRef.current = false
         dotCloudRef.current.expandCloud()
         setIsCloudExpanded(true)
       }
