@@ -6,6 +6,7 @@ import GridItem from './GridItem'
 import GridContainer from './GridContainer'
 import ScrollSnapPoints from './ScrollSnapPoints'
 import DotCloudCanvas from './DotCloudCanvas'
+import CustomCursor from './CustomCursor'
 import { useViewportColumns } from './useViewportColumns'
 import './App.css'
 
@@ -50,14 +51,14 @@ function App() {
     }
   }
 
-  // Handle "Leo Frankel" click - scroll to top
+  // Handle "Leo Frankel" click - scroll to row 2
   const handleNameClick = () => {
     const html = document.documentElement
     const originalScrollSnapType = html.style.scrollSnapType
     html.style.scrollSnapType = 'none'
 
     gsap.to(window, {
-      scrollTo: 0,
+      scrollTo: 80,
       duration: 1.5,
       ease: 'power2.inOut',
       onComplete: () => {
@@ -66,16 +67,40 @@ function App() {
     })
   }
 
+  // Handle "Work" click - scroll to first project section
+  const handleWorkClick = () => {
+    const targetElement = document.getElementById('apple-music')
+    if (targetElement) {
+      const html = document.documentElement
+      const originalScrollSnapType = html.style.scrollSnapType
+      html.style.scrollSnapType = 'none'
+
+      const targetPosition = targetElement.getBoundingClientRect().top + window.scrollY - 60
+
+      gsap.to(window, {
+        scrollTo: targetPosition,
+        duration: 1.5,
+        ease: 'power2.inOut',
+        onComplete: () => {
+          html.style.scrollSnapType = originalScrollSnapType
+        }
+      })
+    }
+  }
+
   return (
     <>
+      {/* Custom cursor */}
+      <CustomCursor />
+
       {/* Visual grid guides - set show={false} to hide in production */}
-      <Grid show={false} />
+      <Grid show={true} />
 
       {/* Dot Cloud Navigation Canvas */}
       <DotCloudCanvas ref={dotCloudRef} />
 
       {/* Scroll snap points for gentle grid alignment */}
-      <ScrollSnapPoints snapRows={[0, bottomRow * 2, bottomRow * 3 -  1]} />
+      <ScrollSnapPoints snapRows={[2, bottomRow * 2, bottomRow * 3 -  1]} />
 
       {/* Leo Frankel with white circle - bottom-left of cell 1,1 */}
       <div style={{
@@ -101,6 +126,7 @@ function App() {
         />
         <div
           onClick={handleNameClick}
+          className="resume-link"
           style={{
             fontSize: '20',
             lineHeight: '20px',
@@ -115,7 +141,7 @@ function App() {
       {/* Grid Container - uses CSS Grid instead of absolute positioning */}
       <GridContainer>
         {/* New header - scrolls normally, 3 columns from right */}
-        <GridItem col={rightColumn} row={1} align="bottom-left">
+        <GridItem col={rightColumn+1} row={2} align="bottom-left">
           <div style={{
             fontSize: '20',
             lineHeight: '20px',
@@ -125,31 +151,33 @@ function App() {
           </div>
         </GridItem>
 
-      <GridItem col={rightColumn} row={2} colSpan={3} align="top-left">
+      <GridItem col={rightColumn+1} row={3} colSpan={3} align="top-left">
         <div style={textStyle}>
-          Currently working on WEFT➚, <br />
+          Currently working on <a href="https://leo-levin.github.io/weft/public/index.html" target="_blank" rel="noopener noreferrer" className="resume-link">WEFT➚</a>, <br />
           a media-agnostic creative<br />
           coding language.
         </div>
-      </GridItem>
+        </GridItem>
 
-      <GridItem col={rightColumn} row={4} align="bottom-left">
+
+
+      <GridItem col={rightColumn+1} row={5} align="bottom-left">
         <div style={{ fontSize: '20', lineHeight: '20px', textDecoration: 'underline' }}>
           About
         </div>
       </GridItem>
 
-      <GridItem col={rightColumn} row={5} colSpan={3} align="top-left">
+      <GridItem col={rightColumn+1} row={6} colSpan={3} align="top-left">
         <div style={{ fontSize: '20', lineHeight: '20px' }}>
           I think in systems. Junior <br />
           at UChicago studying math <br />
           and CS. Currently designing <br />
-          at Doralice➚.
+          at <a href="https://www.doralicedoralice.com" target="_blank" rel="noopener noreferrer" className="resume-link">Doralice➚</a><br />
         </div>
       </GridItem>
 
       {/* Contact header - scrolls normally */}
-      <GridItem col={rightColumn} row={7} align="bottom-left">
+      <GridItem col={rightColumn+1} row={8} align="bottom-left">
         <div style={{
           fontSize: '20',
           lineHeight: '20px',
@@ -159,30 +187,41 @@ function App() {
         </div>
       </GridItem>
 
-      <GridItem col={rightColumn} row={8} colSpan={3} align="top-left">
+
+
+      <GridItem col={rightColumn+1} row={9} colSpan={3} align="top-left">
         <div style={{ fontSize: '20', lineHeight: '20px' }}>
           leolfrankel@gmail.com<br />
           310 463 2774<br />
           <br />
-          resume➚<br />
-          github➚<br />
+          <a href="/lf-portfolio/src/Leo%20Frankel%20Resume.pdf" target="_blank" rel="noopener noreferrer" className="resume-link">resume➚</a><br />
+
+                      <a href="https://github.com/leo-levin/" target="_blank" rel="noopener noreferrer" className="resume-link">github➚</a><br />
         </div>
       </GridItem>
 
       {/* Work - Page 1 */}
-      <GridItem col={rightColumn} row={bottomRow} colSpan={3} align="bottom-left">
-        <div style={{ fontSize: '20', lineHeight: '20px', textDecoration: 'underline' }}>
+      <GridItem col={rightColumn+1} row={bottomRow} colSpan={3} align="bottom-left">
+        <div
+          onClick={handleWorkClick}
+          style={{
+            fontSize: '20',
+            lineHeight: '20px',
+            textDecoration: 'underline',
+            cursor: 'pointer'
+          }}
+        >
           Work
         </div>
       </GridItem>
 
       {/* Apple Music Club Radio - Page 2 */}
-      <GridItem col={rightColumn} row={bottomRow * 2} colSpan={3} align="bottom-left">
+      <GridItem col={rightColumn+1} row={bottomRow * 2} colSpan={3} align="bottom-left">
         <div id="apple-music" style={{ fontSize: '20', lineHeight: '20px', textDecoration: 'underline' }}>
           Apple Music Club Radio
         </div>
       </GridItem>
-      <GridItem col={rightColumn} row={bottomRow * 2 + 1} colSpan={3} align="top-left">
+      <GridItem col={rightColumn+1} row={bottomRow * 2 + 1} colSpan={3} align="top-left">
         <div style={{ fontSize: '20', lineHeight: '20px' }}>
           Lorem ipsum <br />
           at UChicago studying math <br />
@@ -192,12 +231,12 @@ function App() {
       </GridItem>
 
       {/* Televisa - Page 3 */}
-      <GridItem col={rightColumn} row={bottomRow * 3 - 1} colSpan={3} align="bottom-left">
+      <GridItem col={rightColumn+1} row={bottomRow * 3 - 1} colSpan={3} align="bottom-left">
         <div id="televisa" style={{ fontSize: '20', lineHeight: '20px', textDecoration: 'underline' }}>
           Televisa
         </div>
       </GridItem>
-      <GridItem col={rightColumn} row={bottomRow * 3} colSpan={3} align="top-left">
+      <GridItem col={rightColumn+1} row={bottomRow * 3} colSpan={3} align="top-left">
        <div style={{ fontSize: '20', lineHeight: '20px' }}>
           Lorem ipsum <br />
           at UChicago studying math <br />

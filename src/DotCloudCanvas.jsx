@@ -290,7 +290,7 @@ const DotCloudCanvas = forwardRef((props, ref) => {
   return (
     <div ref={containerRef} className="dot-cloud-container" onClick={handleBackgroundClick}>
       {/* Category labels */}
-      {isExpanded && !isMobile && CATEGORIES.map((category) => {
+      {isExpanded && !isMobile && categoryAlpha > 0.01 && CATEGORIES.map((category) => {
         const { r, theta } = cartesianToPolar(category.x, category.y);
         const currentTheta = theta + rotationAngle;
         const { x, y } = polarToCartesian(r, currentTheta);
@@ -329,16 +329,18 @@ const DotCloudCanvas = forwardRef((props, ref) => {
             }}
           >
             <div className="node-dot" />
-            <div
-              className="node-label"
-              style={{
-                fontSize: '20',
-                lineHeight: '20px',
-                opacity: node.textAlpha,
-              }}
-            >
-              {node.label}
-            </div>
+            {node.textAlpha > 0.01 && (
+              <div
+                className="node-label"
+                style={{
+                  fontSize: 14,
+                  lineHeight: '20px',
+                  opacity: node.textAlpha,
+                }}
+              >
+                {node.label}
+              </div>
+            )}
           </div>
         );
       })}

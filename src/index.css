@@ -36,18 +36,23 @@ a:hover {
 
 html {
   scroll-snap-type: y mandatory;
-  overflow-x: hidden;
+  overflow-x: auto;
   user-select: text;
   -webkit-user-select: text;
   -moz-user-select: text;
+  cursor: none;
+}
+
+* {
+  cursor: none !important;
 }
 
 body {
   margin: 0;
   padding: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  overflow-x: hidden;
+  min-width: 1280px;
+  min-height: 768px;
+  overflow-x: auto;
   background-color: var(--background);
   user-select: text;
   -webkit-user-select: text;

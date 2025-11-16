@@ -1,0 +1,12 @@
+.custom-cursor {
+  position: fixed;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #17181C;
+  pointer-events: none;
+  z-index: 99999;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}

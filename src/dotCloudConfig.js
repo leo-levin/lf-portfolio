@@ -19,7 +19,7 @@ export const DOT_CLOUD_CONFIG = {
   dotRadius: 6, // 12px diameter = 6px radius
   dotColor: '#FFFFFF',
   textColor: '#000000',
-  textOffsetX: 15, // Distance between dot and text label
+  textOffsetX: 10, // Distance between dot and text label
   fontSize: 20, // Pixels - exact same as rest of site
   fontFamily: "Monaco, Menlo, 'Courier New', Courier, monospace",
 
@@ -38,13 +38,13 @@ export const CATEGORIES = [
     id: 'theory',
     label: 'Theory',
     x: 40,  // Top of triangle - more spread out
-    y: -280,
+    y: -300,
   },
   {
     id: 'visuals',
     label: 'Visuals',
     x: -260,  // Left side - more spread out
-    y: 130,
+    y: 110,
   },
   {
     id: 'engineering',
@@ -61,7 +61,7 @@ export const CATEGORIES = [
 export const PROJECT_NODES = [
   {
     id: 'modular-forms',
-    label: 'Modular Forms',
+    label: 'MODULAR FORMS',
     category: 'theory',
     x: 50,
     y: -170,
@@ -69,7 +69,7 @@ export const PROJECT_NODES = [
   },
   {
     id: 'weft-lang',
-    label: 'Weft Lang',
+    label: 'WEFT LANG',
     category: 'theory',
     x: -40,
     y: -140,
@@ -77,7 +77,7 @@ export const PROJECT_NODES = [
   },
   {
     id: 'weft-runtime',
-    label: 'Weft Runtime',
+    label: 'WEFT RUNTIME',
     category: 'theory',
     x: 80,
     y: -80,
@@ -85,7 +85,7 @@ export const PROJECT_NODES = [
   },
   {
     id: 'apple-music-club-radio',
-    label: 'Apple Music Club Radio',
+    label: 'APPLE MUSIC CLUB RADIO',
     category: 'visuals',
     x: -140,
     y: 10,
@@ -93,7 +93,7 @@ export const PROJECT_NODES = [
   },
   {
     id: 'apple-music-studios',
-    label: 'Apple Music Studios',
+    label: 'APPLE MUSIC STUDIOS',
     category: 'visuals',
     x: -160,
     y: 80,
@@ -101,7 +101,7 @@ export const PROJECT_NODES = [
   },
   {
     id: 'touchdesigner',
-    label: 'TouchDesigner',
+    label: 'TOUCHDESIGNER',
     category: 'visuals',
     x: -80,
     y: 100,
@@ -109,7 +109,7 @@ export const PROJECT_NODES = [
   },
   {
     id: 'photoshop-tools',
-    label: 'Photoshop Tools',
+    label: 'PHOTOSHOP TOOLS',
     category: 'engineering',
     x: 90,
     y: 130,
@@ -117,7 +117,7 @@ export const PROJECT_NODES = [
   },
   {
     id: 'televisa',
-    label: 'Televisa',
+    label: 'TELEVISA',
     category: 'engineering',
     x: 130,
     y: 160,
