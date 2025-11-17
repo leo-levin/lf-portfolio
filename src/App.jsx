@@ -405,7 +405,7 @@ American television.`,
           leolfrankel@gmail.com<br />
           310 463 2774<br />
           <br />
-          <a href="/lf-portfolio/src/Leo%20Frankel%20Resume.pdf" target="_blank" rel="noopener noreferrer" className="resume-link">resume➚</a><br />
+          <a href="/lf-portfolio/Leo%20Frankel%20Resume.pdf" target="_blank" rel="noopener noreferrer" className="resume-link">resume➚</a><br />
 
                       <a href="https://github.com/leo-levin/" target="_blank" rel="noopener noreferrer" className="resume-link">github➚</a><br />
         </div>
