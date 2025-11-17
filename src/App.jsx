@@ -18,7 +18,7 @@ function App() {
   const { rightColumn, bottomRow } = useViewportColumns()
   const whiteDotRef = useRef(null)
   const dotCloudRef = useRef(null)
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 880 : false)
 
   // Mobile detection (< 880px)
   useEffect(() => {
@@ -39,10 +39,7 @@ function App() {
     {
       id: 'modular-forms',
       title: 'Modular Forms',
-      description: `Exploring the theory of
-modular forms and their
-applications in number
-theory.`,
+      description: `Exploring the theory of modular forms and their applications in number theory.`,
       titleRow: bottomRow * 2,
       carousel: {
         items: ['#2C3E50', '#34495E', '#7F8C8D', '#95A5A6', '#BDC3C7', '#ECF0F1']
@@ -60,9 +57,7 @@ theory.`,
     {
       id: 'weft-runtime',
       title: 'WEFT Runtime',
-      description: `Runtime environment and
-interpreter for the WEFT
-creative coding language.`,
+      description: `Runtime environment and interpreter for the WEFT creative coding language.`,
       titleRow: bottomRow * 4,
       carousel: {
         items: ['#16A085', '#1ABC9C', '#48C9B0', '#76D7C4', '#A3E4D7', '#D1F2EB']
@@ -72,9 +67,7 @@ creative coding language.`,
     {
       id: 'apple-music',
       title: 'Apple Music Club Radio',
-      description: `Visual design and branding
-for Apple Music's club
-radio streaming platform.`,
+      description: `Visual design and branding for Apple Music's club radio streaming platform.`,
       titleRow: bottomRow * 5,
       carousel: {
         items: ['#E74C3C', '#EC7063', '#F1948A', '#F5B7B1', '#FADBD8', '#FDEDEC']
@@ -83,9 +76,7 @@ radio streaming platform.`,
     {
       id: 'apple-music-studios',
       title: 'Apple Music Studios',
-      description: `Studio recording spaces
-and production facilities
-for Apple Music artists.`,
+      description: `Studio recording spaces and production facilities for Apple Music artists.`,
       titleRow: bottomRow * 6,
       carousel: {
         items: ['#3498DB', '#5DADE2', '#85C1E2', '#AED6F1', '#D6EAF8', '#EBF5FB']
@@ -94,9 +85,7 @@ for Apple Music artists.`,
     {
       id: 'touchdesigner',
       title: 'TouchDesigner',
-      description: `Real-time interactive
-multimedia installations
-and visual performances.`,
+      description: `Real-time interactive multimedia installations and visual performances.`,
       titleRow: bottomRow * 7,
       carousel: {
         items: ['#F39C12', '#F8C471', '#FAD7A0', '#FCE5CD', '#FEF5E7', '#FFFBF0']
@@ -106,9 +95,7 @@ and visual performances.`,
     {
       id: 'photoshop-tools',
       title: 'Photoshop Tools',
-      description: `Custom plugins and
-automation tools for
-Adobe Photoshop.`,
+      description: `Custom plugins and automation tools for Adobe Photoshop.`,
       titleRow: bottomRow * 8,
       carousel: {
         items: ['#27AE60', '#52BE80', '#7DCEA0', '#A9DFBF', '#D5F4E6', '#EAFAF1']
@@ -117,9 +104,7 @@ Adobe Photoshop.`,
     {
       id: 'televisa',
       title: 'Televisa',
-      description: `Broadcast graphics and
-motion design for Latin
-American television.`,
+      description: `Broadcast graphics and motion design for Latin American television.`,
       titleRow: bottomRow * 9,
       carousel: {
         items: ['#E67E22', '#EB984E', '#F0B27A', '#F5CBA7', '#FAE5D3', '#FDF2E9']
@@ -133,6 +118,9 @@ American television.`,
   const [shouldWaitForCloud, setShouldWaitForCloud] = useState(true) // Track if carousel should wait for cloud
   const [carouselIndices, setCarouselIndices] = useState({})
   const [navPositions, setNavPositions] = useState({}) // Track nav position for each project
+  const [showHomepageContent, setShowHomepageContent] = useState(
+    typeof window !== 'undefined' ? window.innerWidth >= 880 : true
+  ) // Homepage content visibility (start hidden on mobile)
   const carouselRefs = useRef({})
   const wasOnHomepageRef = useRef(true) // Track if we were on homepage in previous scroll
   const isCollapsingRef = useRef(false) // Track if cloud is currently collapsing
@@ -157,7 +145,9 @@ American television.`,
 
         projects.forEach(project => {
           if (project.carousel) {
-            const distance = Math.abs(project.titleRow - scrollRow)
+            // Use adjusted titleRow that accounts for mobile offset
+            const adjustedTitleRow = project.titleRow + mobileProjectOffset
+            const distance = Math.abs(adjustedTitleRow - scrollRow)
             if (distance < closestDistance) {
               closestDistance = distance
               closestProject = project.id
@@ -169,7 +159,14 @@ American television.`,
         const isAtProject = closestDistance < 1.5
 
         // Determine if we should be on homepage (far from all projects)
-        const isHomepage = scrollY < 100
+        // Mobile: use row 14 threshold (1040px), Desktop: use 100px
+        const homepageThreshold = isMobile ? 1040 : 100
+        const isHomepage = scrollY < homepageThreshold
+
+        // Separate threshold for showing homepage content (earlier than snap point)
+        // On mobile, show content when scrolling past row 12 (880px) - when cloud starts collapsing
+        const contentThreshold = isMobile ? 880 : 0
+        const shouldShowContent = scrollY >= contentThreshold
 
         // Reset collapsing flag whenever cloud is expanded
         if (isCloudExpanded) {
@@ -177,11 +174,12 @@ American television.`,
         }
 
         if (isHomepage) {
-          // On homepage, keep cloud expanded
+          // On homepage, keep cloud expanded and hide content
           if (!isCloudExpanded && dotCloudRef.current) {
             dotCloudRef.current.expandCloud()
           }
           setIsCloudExpanded(true)
+          if (isMobile && !shouldShowContent) setShowHomepageContent(false)
         } else if (isAtProject && isCloudExpanded && !isCollapsingRef.current) {
           // At a project page - collapse immediately (only once)
           isCollapsingRef.current = true
@@ -189,6 +187,11 @@ American television.`,
             dotCloudRef.current.collapseCloud()
           }
           setIsCloudExpanded(false)
+        }
+
+        // Show homepage content when past threshold (on mobile)
+        if (isMobile && shouldShowContent) {
+          setShowHomepageContent(true)
         }
         // Don't do anything if we're between pages (scrolling)
 
@@ -382,34 +385,46 @@ American television.`,
           <div style={{
             fontSize: '20',
             lineHeight: '20px',
-            textDecoration: 'underline'
+            textDecoration: 'underline',
+            opacity: isMobile ? (showHomepageContent ? 1 : 0) : 1,
+            transition: isMobile ? 'opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s' : 'none'
           }}>
             New
           </div>
         </GridItem>
 
       <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? 16 : 3} colSpan={isMobile ? 5 : 3} align="top-left">
-        <div style={textStyle}>
-          Currently working on <a href="https://leo-levin.github.io/weft/public/index.html" target="_blank" rel="noopener noreferrer" className="resume-link">WEFT➚</a>, <br />
-          a media-agnostic creative<br />
-          coding language.
+        <div style={{
+          ...textStyle,
+          opacity: isMobile ? (showHomepageContent ? 1 : 0) : 1,
+          transition: isMobile ? 'opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s' : 'none'
+        }}>
+          Currently working on <a href="https://leo-levin.github.io/weft/public/index.html" target="_blank" rel="noopener noreferrer" className="resume-link">WEFT➚</a>, a media-agnostic creative coding language.
         </div>
         </GridItem>
 
 
 
       <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? 18 : 5} colSpan={isMobile ? 5 : 1} align="bottom-left">
-        <div style={{ fontSize: '20', lineHeight: '20px', textDecoration: 'underline' }}>
+        <div style={{
+          fontSize: '20',
+          lineHeight: '20px',
+          textDecoration: 'underline',
+          opacity: isMobile ? (showHomepageContent ? 1 : 0) : 1,
+          transition: isMobile ? 'opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s' : 'none'
+        }}>
           About
         </div>
       </GridItem>
 
       <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? 19 : 6} colSpan={isMobile ? 5 : 3} align="top-left">
-        <div style={{ fontSize: '20', lineHeight: '20px' }}>
-          I think in systems. Junior <br />
-          at UChicago studying math <br />
-          and CS. Currently designing <br />
-          at <a href="https://www.doralicedoralice.com" target="_blank" rel="noopener noreferrer" className="resume-link">Doralice➚</a><br />
+        <div style={{
+          fontSize: '20',
+          lineHeight: '20px',
+          opacity: isMobile ? (showHomepageContent ? 1 : 0) : 1,
+          transition: isMobile ? 'opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s' : 'none'
+        }}>
+          I think in systems. Junior at UChicago studying math and CS. Currently designing at <a href="https://www.doralicedoralice.com" target="_blank" rel="noopener noreferrer" className="resume-link">Doralice➚</a><br />
         </div>
       </GridItem>
 
@@ -418,7 +433,9 @@ American television.`,
         <div style={{
           fontSize: '20',
           lineHeight: '20px',
-          textDecoration: 'underline'
+          textDecoration: 'underline',
+          opacity: isMobile ? (showHomepageContent ? 1 : 0) : 1,
+          transition: isMobile ? 'opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s' : 'none'
         }}>
           Contact
         </div>
@@ -427,7 +444,12 @@ American television.`,
 
 
       <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? 22 : 9} colSpan={isMobile ? 5 : 3} align="top-left">
-        <div style={{ fontSize: '20', lineHeight: '20px' }}>
+        <div style={{
+          fontSize: '20',
+          lineHeight: '20px',
+          opacity: isMobile ? (showHomepageContent ? 1 : 0) : 1,
+          transition: isMobile ? 'opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s' : 'none'
+        }}>
           leolfrankel@gmail.com<br />
           310 463 2774<br />
           <br />
@@ -445,7 +467,9 @@ American television.`,
             fontSize: '20',
             lineHeight: '20px',
             textDecoration: 'underline',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            opacity: isMobile ? (showHomepageContent ? 1 : 0) : 1,
+            transition: isMobile ? 'opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s' : 'none'
           }}
         >
           Work

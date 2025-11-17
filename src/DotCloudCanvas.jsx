@@ -257,9 +257,9 @@ const DotCloudCanvas = forwardRef((props, ref) => {
 
       scrollTimeoutRef.current = setTimeout(() => {
         const scrollY = window.scrollY || window.pageYOffset;
-        // On mobile, collapse at row 14 (14-1)*80 = 1040px
+        // On mobile, collapse at row 12 (12-1)*80 = 880px (before row 14 snap)
         // On desktop, collapse at scrollY > 100
-        const threshold = isMobile ? 1040 : 100;
+        const threshold = isMobile ? 880 : 100;
         const isHomepage = scrollY < threshold;
         const newSection = isHomepage ? 'homepage' : 'project';
 

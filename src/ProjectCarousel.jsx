@@ -108,8 +108,8 @@ const ProjectCarousel = forwardRef(({ items, titleRow, rightColumn, isMobile = f
   const navColumn = Math.ceil(carouselWidth / 100) + 1
 
   // Notify parent of nav position
-  // On mobile, carousel is one row below (titleRow + 4 instead of + 3)
-  const carouselRow = isMobile ? titleRow + 4 : titleRow + 3
+  // On mobile, carousel is two rows below (titleRow + 5 instead of + 3)
+  const carouselRow = isMobile ? titleRow + 5 : titleRow + 3
   // Nav should be one row below carousel (carousel row + carousel span)
   const navRow = isMobile ? carouselRow + carouselRowSpan : carouselRow
   const navCol = isMobile ? 1 : navColumn
