@@ -51,8 +51,19 @@
   opacity: 0.6;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 880px) {
   .dot-cloud-container {
     width: 100vw;
+  }
+
+  /* Make dot cloud non-interactive on mobile (but keep animation) */
+  .project-node {
+    pointer-events: none;
+    cursor: default;
+  }
+
+  .project-node:hover .node-dot {
+    width: 12px;
+    height: 12px;
   }
 }

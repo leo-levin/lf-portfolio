@@ -2,7 +2,7 @@ import { useRef, useState, useEffect, useImperativeHandle, forwardRef } from 're
 import GridItem from './GridItem'
 import './ProjectCarousel.css'
 
-const ProjectCarousel = forwardRef(({ items, titleRow, rightColumn, isVisible, waitForCloud, onIndexChange, onNavRowCalculated }, ref) => {
+const ProjectCarousel = forwardRef(({ items, titleRow, rightColumn, isMobile = false, isVisible, waitForCloud, onIndexChange, onNavRowCalculated }, ref) => {
   const carouselRef = useRef(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const wasVisibleRef = useRef(isVisible)
@@ -29,8 +29,11 @@ const ProjectCarousel = forwardRef(({ items, titleRow, rightColumn, isVisible, w
   const maxRowsFromHeight = Math.floor((availableHeight + 20) / 80)
 
   // Take minimum of: width constraint, height constraint, and available columns
+  // On mobile, ignore rightColumn constraint to maximize carousel width
   const maxAvailableColumns = Math.floor(rightColumn - 1)
-  const carouselGridSize = Math.max(1, Math.min(maxColumnsFromWidth, maxRowsFromHeight, maxAvailableColumns))
+  const carouselGridSize = isMobile
+    ? Math.max(3, Math.min(maxColumnsFromWidth, maxRowsFromHeight))  // Mobile: min 3×3, maximize width
+    : Math.max(1, Math.min(maxColumnsFromWidth, maxRowsFromHeight, maxAvailableColumns))
 
   const carouselColSpan = carouselGridSize
   const carouselRowSpan = carouselGridSize
@@ -40,13 +43,24 @@ const ProjectCarousel = forwardRef(({ items, titleRow, rightColumn, isVisible, w
     scrollToIndex: (index) => {
       const carousel = carouselRef.current
       if (!carousel) return
-      const itemHeight = carousel.scrollHeight / items.length
-      carousel.scrollTo({
-        top: index * itemHeight,
-        behavior: 'smooth'
-      })
+
+      if (isMobile) {
+        // Horizontal scroll on mobile
+        const itemWidth = carousel.scrollWidth / items.length
+        carousel.scrollTo({
+          left: index * itemWidth,
+          behavior: 'smooth'
+        })
+      } else {
+        // Vertical scroll on desktop
+        const itemHeight = carousel.scrollHeight / items.length
+        carousel.scrollTo({
+          top: index * itemHeight,
+          behavior: 'smooth'
+        })
+      }
     }
-  }), [items.length])
+  }), [items.length, isMobile])
 
   // Handle scroll to update active index
   useEffect(() => {
@@ -54,9 +68,19 @@ const ProjectCarousel = forwardRef(({ items, titleRow, rightColumn, isVisible, w
     if (!carousel) return
 
     const handleScroll = () => {
-      const scrollPosition = carousel.scrollTop
-      const itemHeight = carousel.scrollHeight / items.length
-      const newIndex = Math.round(scrollPosition / itemHeight)
+      let newIndex
+      if (isMobile) {
+        // Horizontal scroll on mobile
+        const scrollPosition = carousel.scrollLeft
+        const itemWidth = carousel.scrollWidth / items.length
+        newIndex = Math.round(scrollPosition / itemWidth)
+      } else {
+        // Vertical scroll on desktop
+        const scrollPosition = carousel.scrollTop
+        const itemHeight = carousel.scrollHeight / items.length
+        newIndex = Math.round(scrollPosition / itemHeight)
+      }
+
       if (newIndex !== activeIndex) {
         setActiveIndex(newIndex)
         onIndexChange?.(newIndex)
@@ -65,7 +89,7 @@ const ProjectCarousel = forwardRef(({ items, titleRow, rightColumn, isVisible, w
 
     carousel.addEventListener('scroll', handleScroll)
     return () => carousel.removeEventListener('scroll', handleScroll)
-  }, [items.length, activeIndex, onIndexChange])
+  }, [items.length, activeIndex, onIndexChange, isMobile])
 
   // Prevent page scroll when cursor is over carousel
   const handleWheel = (e) => {
@@ -84,9 +108,14 @@ const ProjectCarousel = forwardRef(({ items, titleRow, rightColumn, isVisible, w
   const navColumn = Math.ceil(carouselWidth / 100) + 1
 
   // Notify parent of nav position
+  // On mobile, carousel is one row below (titleRow + 4 instead of + 3)
+  const carouselRow = isMobile ? titleRow + 4 : titleRow + 3
+  // Nav should be one row below carousel (carousel row + carousel span)
+  const navRow = isMobile ? carouselRow + carouselRowSpan : carouselRow
+  const navCol = isMobile ? 1 : navColumn
   useEffect(() => {
-    onNavRowCalculated?.({ row: titleRow + 3, column: navColumn })
-  }, [titleRow, navColumn, onNavRowCalculated])
+    onNavRowCalculated?.({ row: navRow, column: navCol })
+  }, [navRow, navCol, onNavRowCalculated])
 
   // Keep carousel at top when hidden, so it's already there when fading in
   useEffect(() => {
@@ -111,7 +140,7 @@ const ProjectCarousel = forwardRef(({ items, titleRow, rightColumn, isVisible, w
   return (
     <GridItem
       col={1}
-      row={titleRow + 3}
+      row={carouselRow}
       colSpan={carouselColSpan}
       rowSpan={carouselRowSpan}
       align="top-left"

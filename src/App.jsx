@@ -18,6 +18,20 @@ function App() {
   const { rightColumn, bottomRow } = useViewportColumns()
   const whiteDotRef = useRef(null)
   const dotCloudRef = useRef(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Mobile detection (< 880px)
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 880)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Mobile offset for projects - pushes first project below Work section
+  const mobileProjectOffset = isMobile ? 20 : 0
 
   // Project data - easy to add/edit projects
   const projects = [
@@ -37,10 +51,7 @@ theory.`,
     {
       id: 'weft-lang',
       title: 'WEFT Language',
-      description: `A media-agnostic creative
-coding language for
-generative art and
-interactive experiences.`,
+      description: `A media-agnostic creative coding language for generative art and interactive experiences.`,
       titleRow: bottomRow * 3,
       carousel: {
         items: ['#8E44AD', '#9B59B6', '#BB8FCE', '#D7BDE2', '#E8DAEF', '#F4ECF7']
@@ -290,12 +301,14 @@ American television.`,
     })
   }
 
-  // Generate snap points from project title rows
-  const snapRows = [2, ...projects.map(p => p.titleRow)]
+  // Generate snap points from project title rows (ensure unique)
+  // Generate snap points - on mobile, add ONE snap for homepage content
+  const mobileHomepageRows = isMobile ? [14] : []  // Single snap for New/About/Contact
+  const snapRows = [...new Set([2, ...mobileHomepageRows, ...projects.map(p => p.titleRow + mobileProjectOffset)])]
 
   // Create mapping of project id -> snap point row for cloud navigation
   const projectSnapPoints = projects.reduce((acc, project) => {
-    acc[project.id] = project.titleRow
+    acc[project.id] = project.titleRow + mobileProjectOffset
     return acc
   }, {})
 
@@ -312,6 +325,19 @@ American television.`,
 
       {/* Scroll snap points for gentle grid alignment */}
       <ScrollSnapPoints snapRows={snapRows} />
+
+      {/* Gray bar behind Leo Frankel header - prevents overlap on scroll (mobile only) */}
+      {isMobile && (
+        <div style={{
+          position: 'fixed',
+          left: '0',
+          top: '0',
+          width: '100%',
+          height: '80px',
+          background: '#AFAFAF',
+          zIndex: 10000
+        }} />
+      )}
 
       {/* Leo Frankel with white circle - bottom-left of cell 1,1 */}
       <div style={{
@@ -352,7 +378,7 @@ American television.`,
       {/* Grid Container - uses CSS Grid instead of absolute positioning */}
       <GridContainer>
         {/* New header - scrolls normally, 3 columns from right */}
-        <GridItem col={rightColumn+1} row={2} align="bottom-left">
+        <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? 15 : 2} colSpan={isMobile ? 5 : 1} align="bottom-left">
           <div style={{
             fontSize: '20',
             lineHeight: '20px',
@@ -362,7 +388,7 @@ American television.`,
           </div>
         </GridItem>
 
-      <GridItem col={rightColumn+1} row={3} colSpan={3} align="top-left">
+      <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? 16 : 3} colSpan={isMobile ? 5 : 3} align="top-left">
         <div style={textStyle}>
           Currently working on <a href="https://leo-levin.github.io/weft/public/index.html" target="_blank" rel="noopener noreferrer" className="resume-link">WEFT➚</a>, <br />
           a media-agnostic creative<br />
@@ -372,13 +398,13 @@ American television.`,
 
 
 
-      <GridItem col={rightColumn+1} row={5} align="bottom-left">
+      <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? 18 : 5} colSpan={isMobile ? 5 : 1} align="bottom-left">
         <div style={{ fontSize: '20', lineHeight: '20px', textDecoration: 'underline' }}>
           About
         </div>
       </GridItem>
 
-      <GridItem col={rightColumn+1} row={6} colSpan={3} align="top-left">
+      <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? 19 : 6} colSpan={isMobile ? 5 : 3} align="top-left">
         <div style={{ fontSize: '20', lineHeight: '20px' }}>
           I think in systems. Junior <br />
           at UChicago studying math <br />
@@ -388,7 +414,7 @@ American television.`,
       </GridItem>
 
       {/* Contact header - scrolls normally */}
-      <GridItem col={rightColumn+1} row={8} align="bottom-left">
+      <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? 21 : 8} colSpan={isMobile ? 5 : 1} align="bottom-left">
         <div style={{
           fontSize: '20',
           lineHeight: '20px',
@@ -400,7 +426,7 @@ American television.`,
 
 
 
-      <GridItem col={rightColumn+1} row={9} colSpan={3} align="top-left">
+      <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? 22 : 9} colSpan={isMobile ? 5 : 3} align="top-left">
         <div style={{ fontSize: '20', lineHeight: '20px' }}>
           leolfrankel@gmail.com<br />
           310 463 2774<br />
@@ -412,7 +438,7 @@ American television.`,
       </GridItem>
 
       {/* Work - Page 1 */}
-      <GridItem col={rightColumn+1} row={bottomRow} colSpan={3} align="bottom-left">
+      <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? 24 : bottomRow} colSpan={isMobile ? 5 : 3} align="bottom-left">
         <div
           onClick={handleWorkClick}
           style={{
@@ -428,16 +454,17 @@ American television.`,
 
       {/* Project sections - dynamically generated from projects array */}
       {projects.map((project) => {
+        const adjustedTitleRow = project.titleRow + mobileProjectOffset
         const elements = [
           /* Project title - 2 rows below snap point */
-          <GridItem key={`${project.id}-title`} col={rightColumn+1} row={project.titleRow + 2} colSpan={3} align="bottom-left">
+          <GridItem key={`${project.id}-title`} col={isMobile ? 1 : rightColumn+1} row={adjustedTitleRow + 2} colSpan={isMobile ? 5 : 3} align="bottom-left">
             <div id={project.id} style={{ fontSize: '20', lineHeight: '20px', textDecoration: 'underline' }}>
               {project.title}
             </div>
           </GridItem>,
 
           /* Project description - 1 row below title (3 rows below snap point) */
-          <GridItem key={`${project.id}-desc`} col={rightColumn+1} row={project.titleRow + 3} colSpan={3} align="top-left">
+          <GridItem key={`${project.id}-desc`} col={isMobile ? 1 : rightColumn+1} row={adjustedTitleRow + 3} colSpan={isMobile ? 5 : 3} align="top-left">
             <div style={{ fontSize: '20', lineHeight: '20px' }}>
               {project.description.split('\n').map((line, i) => (
                 <span key={i}>
@@ -459,8 +486,9 @@ American television.`,
               key={`${project.id}-carousel`}
               ref={(el) => (carouselRefs.current[project.id] = el)}
               items={project.carousel.items}
-              titleRow={project.titleRow}
+              titleRow={adjustedTitleRow}
               rightColumn={rightColumn}
+              isMobile={isMobile}
               isVisible={isVisible}
               waitForCloud={shouldWaitForCloud}
               onIndexChange={(index) => {
@@ -492,7 +520,7 @@ American television.`,
       </GridContainer>
 
       {/* Add some content to enable scrolling for testing */}
-      <div style={{ height: '3000px', position: 'relative' }}>
+      <div style={{ height: '200px', position: 'relative' }}>
         {/* This creates scrollable space */}
       </div>
     </>

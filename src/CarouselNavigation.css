@@ -39,3 +39,12 @@
 .nav-circle.active {
   background: black;
 }
+
+/* Mobile layout: horizontal dots */
+@media (max-width: 880px) {
+  .carousel-navigation {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+  }
+}

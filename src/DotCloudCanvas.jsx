@@ -20,6 +20,7 @@ const DotCloudCanvas = forwardRef((props, ref) => {
   const startTimeRef = useRef(Date.now());
   const scrollTimeoutRef = useRef(null);
   const isProgrammaticScrollRef = useRef(false);
+  const previousIsMobileRef = useRef(null);
   const [isExpanded, setIsExpanded] = useState(true); // Start expanded on homepage
   const [isMobile, setIsMobile] = useState(false);
   const [currentSection, setCurrentSection] = useState('homepage');
@@ -204,12 +205,14 @@ const DotCloudCanvas = forwardRef((props, ref) => {
   // Calculate dynamic rotation center based on viewport
   useEffect(() => {
     const updateRotationCenter = () => {
-      // Grid: 80px columns + 20px gutters, 20px margin
-      // Container is 60vw wide
-      const containerWidth = window.innerWidth * 0.6; // 60vw
+      const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
 
-      // Center horizontally in the left half (30vw from left edge)
+      // Container is 100vw on mobile, 60vw on desktop
+      const containerWidthPercent = viewportWidth < 880 ? 1.0 : 0.6;
+      const containerWidth = viewportWidth * containerWidthPercent;
+
+      // Center horizontally within container
       const centerX = containerWidth / 2;
 
       // Center vertically (50vh)
@@ -223,10 +226,18 @@ const DotCloudCanvas = forwardRef((props, ref) => {
     return () => window.removeEventListener('resize', updateRotationCenter);
   }, []);
 
-  // Check if mobile
+  // Check if mobile (< 880px = 9 columns)
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      const currentIsMobile = window.innerWidth < 880;
+
+      // Only update state if value actually changed
+      if (previousIsMobileRef.current !== currentIsMobile) {
+        console.log(`Layout changed: ${currentIsMobile ? 'MOBILE' : 'DESKTOP'} (viewport: ${window.innerWidth}px)`);
+        window.scrollTo(0, 0);
+        previousIsMobileRef.current = currentIsMobile;
+        setIsMobile(currentIsMobile);
+      }
     };
     checkMobile();
 
@@ -236,8 +247,6 @@ const DotCloudCanvas = forwardRef((props, ref) => {
 
   // Scroll detection
   useEffect(() => {
-    if (isMobile) return;
-
     const handleScroll = () => {
       // Ignore scroll events during programmatic navigation
       if (isProgrammaticScrollRef.current) return;
@@ -248,7 +257,10 @@ const DotCloudCanvas = forwardRef((props, ref) => {
 
       scrollTimeoutRef.current = setTimeout(() => {
         const scrollY = window.scrollY || window.pageYOffset;
-        const isHomepage = scrollY < 100;
+        // On mobile, collapse at row 14 (14-1)*80 = 1040px
+        // On desktop, collapse at scrollY > 100
+        const threshold = isMobile ? 1040 : 100;
+        const isHomepage = scrollY < threshold;
         const newSection = isHomepage ? 'homepage' : 'project';
 
         if (newSection !== currentSection) {
@@ -291,9 +303,9 @@ const DotCloudCanvas = forwardRef((props, ref) => {
   }, []);
 
   return (
-    <div ref={containerRef} className="dot-cloud-container" onClick={handleBackgroundClick}>
+    <div ref={containerRef} className="dot-cloud-container" {...(!isMobile && { onClick: handleBackgroundClick })}>
       {/* Category labels */}
-      {isExpanded && !isMobile && categoryAlpha > 0.01 && CATEGORIES.map((category) => {
+      {isExpanded && categoryAlpha > 0.01 && CATEGORIES.map((category) => {
         const { r, theta } = cartesianToPolar(category.x, category.y);
         const currentTheta = theta + rotationAngle;
         const { x, y } = polarToCartesian(r, currentTheta);
@@ -316,7 +328,7 @@ const DotCloudCanvas = forwardRef((props, ref) => {
       })}
 
       {/* Project nodes */}
-      {isExpanded && !isMobile && nodesRef.current.map((node) => {
+      {isExpanded && nodesRef.current.map((node) => {
         const currentTheta = node.baseTheta + rotationAngle;
         const { x, y } = polarToCartesian(node.currentR, currentTheta);
         const screenX = rotationCenter.x + x + collapseOffset.x;
@@ -326,7 +338,7 @@ const DotCloudCanvas = forwardRef((props, ref) => {
           <div
             key={node.id}
             className="project-node"
-            onClick={(e) => handleNodeClick(node.targetSection, e)}
+            {...(!isMobile && { onClick: (e) => handleNodeClick(node.targetSection, e) })}
             style={{
               transform: `translate(${screenX}px, ${screenY}px)`,
             }}
