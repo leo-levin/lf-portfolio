@@ -305,7 +305,7 @@ American television.`,
       <CustomCursor />
 
       {/* Visual grid guides - set show={false} to hide in production */}
-      <Grid show={true} />
+      <Grid show={true}/>
 
       {/* Dot Cloud Navigation Canvas */}
       <DotCloudCanvas ref={dotCloudRef} projectSnapPoints={projectSnapPoints} />

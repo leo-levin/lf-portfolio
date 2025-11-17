@@ -3,7 +3,6 @@
   flex-direction: column;
   gap: 8px;
   align-items: flex-start;
-  padding-left: 10px; /* Small padding from left edge of column */
 
   /* Fade in - smooth transition when cloud already gone */
   transition: opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 0s;

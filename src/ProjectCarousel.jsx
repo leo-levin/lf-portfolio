@@ -7,9 +7,33 @@ const ProjectCarousel = forwardRef(({ items, titleRow, rightColumn, isVisible, w
   const [activeIndex, setActiveIndex] = useState(0)
   const wasVisibleRef = useRef(isVisible)
 
-  // Calculate carousel dimensions (square in grid units)
-  const carouselColSpan = rightColumn - 1
-  const carouselRowSpan = rightColumn - 1
+  // Calculate carousel dimensions (always square in grid units)
+  // Check both viewport width and height to determine max grid size
+
+  const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1000
+  const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 1000
+
+  // Account for margins - carousel needs to fit in viewport with some padding
+  const horizontalPadding = 40 // Left margin + some right space
+  const verticalPadding = 280 // Top space + bottom space (generous for headers/footers)
+
+  // Available space for carousel in viewport
+  const availableWidth = viewportWidth - horizontalPadding
+  const availableHeight = viewportHeight - verticalPadding
+
+  // Calculate max grid cells that fit in each dimension
+  // Formula: solve for n in: n * cellSize + (n-1) * gap <= available
+  // For columns: n * 80 + (n-1) * 20 <= availableWidth → n * 100 - 20 <= availableWidth → n <= (availableWidth + 20) / 100
+  // For rows: n * 60 + (n-1) * 20 <= availableHeight → n * 80 - 20 <= availableHeight → n <= (availableHeight + 20) / 80
+  const maxColumnsFromWidth = Math.floor((availableWidth + 20) / 100)
+  const maxRowsFromHeight = Math.floor((availableHeight + 20) / 80)
+
+  // Take minimum of: width constraint, height constraint, and available columns
+  const maxAvailableColumns = Math.floor(rightColumn - 1)
+  const carouselGridSize = Math.max(1, Math.min(maxColumnsFromWidth, maxRowsFromHeight, maxAvailableColumns))
+
+  const carouselColSpan = carouselGridSize
+  const carouselRowSpan = carouselGridSize
 
   // Expose scrollToIndex method to parent
   useImperativeHandle(ref, () => ({
@@ -48,31 +72,12 @@ const ProjectCarousel = forwardRef(({ items, titleRow, rightColumn, isVisible, w
     e.stopPropagation()
   }
 
-  // Calculate carousel size: square, based on available width
-  const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 1000
-  const bottomPadding = 180 // Adjusted for proper spacing
-
-  // Carousel is positioned 3 rows below the snap point (titleRow + 3 vs titleRow)
-  const carouselTopOffset = 3 * 80 // 240px from top of viewport when snapped
-
-  // Try full available width first (rightColumn - 1 columns)
-  let numColumns = carouselColSpan
-  let carouselSize = numColumns * 80 + (numColumns - 1) * 20
-
-  // Account for carousel position + height + bottom padding
-  const maxHeight = viewportHeight - carouselTopOffset - bottomPadding
-
-  // If that's too tall, try reducing by one column
-  if (carouselSize > maxHeight && numColumns > 1) {
-    numColumns = carouselColSpan - 1
-    carouselSize = numColumns * 80 + (numColumns - 1) * 20
-  }
-
-  // Ensure it fits in viewport with proper spacing
-  carouselSize = Math.min(carouselSize, maxHeight)
-
-  // Add 160px to width for proper sizing
-  const carouselWidth = carouselSize + 160
+  // Calculate carousel dimensions based on grid cells
+  // Grid cells: 80px wide × 60px tall, with 20px gaps
+  // Width: n columns × 80px + (n-1) gaps × 20px
+  // Height: n rows × 60px + (n-1) gaps × 20px
+  const carouselWidth = carouselGridSize * 80 + (carouselGridSize - 1) * 20
+  const carouselHeight = carouselGridSize * 60 + (carouselGridSize - 1) * 20
 
   // Calculate nav column based on carousel width
   // Each column is 80px + 20px gap = 100px
@@ -110,13 +115,13 @@ const ProjectCarousel = forwardRef(({ items, titleRow, rightColumn, isVisible, w
       colSpan={carouselColSpan}
       rowSpan={carouselRowSpan}
       align="top-left"
-      style={{ width: `${carouselWidth}px`, height: `${carouselSize}px` }}
+      style={{ width: `${carouselWidth}px`, height: `${carouselHeight}px` }}
     >
       <div
         ref={carouselRef}
         className={`project-carousel ${!isVisible ? 'hidden' : ''} ${waitForCloud ? 'wait-for-cloud' : ''}`}
         onWheel={handleWheel}
-        style={{ height: `${carouselSize}px` }}
+        style={{ height: `${carouselHeight}px` }}
       >
         {items.map((color, index) => (
           <div
@@ -124,8 +129,8 @@ const ProjectCarousel = forwardRef(({ items, titleRow, rightColumn, isVisible, w
             className="carousel-item"
             style={{
               backgroundColor: color,
-              height: `${carouselSize}px`,
-              minHeight: `${carouselSize}px`
+              height: `${carouselHeight}px`,
+              minHeight: `${carouselHeight}px`
             }}
           />
         ))}
