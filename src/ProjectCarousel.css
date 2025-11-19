@@ -39,7 +39,21 @@
   justify-content: center;
 }
 
-/* Mobile layout: horizontal scrolling */
+/* Horizontal layout for stacked orientation */
+.project-carousel.horizontal {
+  flex-direction: row;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+}
+
+.project-carousel.horizontal .carousel-item {
+  width: 100%;
+  min-width: 100%;
+  height: 100%;
+}
+
+/* Legacy media query for backwards compatibility */
 @media (max-width: 880px) {
   .project-carousel {
     flex-direction: row;

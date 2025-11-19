@@ -32,7 +32,18 @@
   background: black;
 }
 
-/* Mobile layout: horizontal dots */
+/* Horizontal layout for stacked orientation */
+.carousel-navigation.horizontal {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.carousel-navigation.horizontal .nav-circle {
+  cursor: default;
+}
+
+/* Legacy media query for backwards compatibility */
 @media (max-width: 880px) {
   .carousel-navigation {
     flex-direction: row;

@@ -70,7 +70,7 @@ function App() {
   useEffect(() => {
     const checkMobile = () => {
       // Stacked orientation when: narrow width OR few columns available
-      const isStacked = window.innerWidth < MOBILE_BREAKPOINT || rightColumn <= 9
+      const isStacked = window.innerWidth < MOBILE_BREAKPOINT || rightColumn <= 6n
       setIsMobile(isStacked)
     }
     checkMobile()
@@ -160,8 +160,14 @@ function App() {
     }
   ]
 
-  // Carousel state
-  const [isCloudExpanded, setIsCloudExpanded] = useState(true) // Start as true (homepage)
+  // Carousel state - initialize based on scroll position
+  const [isCloudExpanded, setIsCloudExpanded] = useState(() => {
+    if (typeof window === 'undefined') return true
+    const scrollY = window.scrollY || window.pageYOffset
+    // Use simple width check for initialization
+    const threshold = window.innerWidth < MOBILE_BREAKPOINT ? HOMEPAGE_SCROLL_THRESHOLD_MOBILE : HOMEPAGE_SCROLL_THRESHOLD_DESKTOP
+    return scrollY < threshold // Expanded only if on homepage
+  })
   const [currentProjectId, setCurrentProjectId] = useState(null) // Track which project page we're on
   const [carouselIndices, setCarouselIndices] = useState({})
   const [navPositions, setNavPositions] = useState({}) // Track nav position for each project
@@ -204,10 +210,13 @@ function App() {
           }
           setIsCloudExpanded(true)
           if (isMobile && !shouldShowContent) setShowHomepageContent(false)
-        } else if (isAtProject && isCloudExpanded && !isCollapsingRef.current) {
-          isCollapsingRef.current = true
-          if (dotCloudRef.current) {
-            dotCloudRef.current.collapseCloud()
+        } else {
+          // Not on homepage - collapse cloud
+          if (isCloudExpanded && !isCollapsingRef.current) {
+            isCollapsingRef.current = true
+            if (dotCloudRef.current) {
+              dotCloudRef.current.collapseCloud()
+            }
           }
           setIsCloudExpanded(false)
         }
@@ -489,14 +498,14 @@ function App() {
         const elements = [
           /* Project title - 2 rows below snap point */
           <GridItem key={`${project.id}-title`} col={isMobile ? 1 : rightColumn+1} row={adjustedTitleRow + 2} colSpan={isMobile ? 5 : 3} align="bottom-left">
-            <div id={project.id} style={{ fontSize: '20', lineHeight: '20px', textDecoration: 'underline' }}>
+            <div id={project.id} className="project-title" style={{ fontSize: '20', lineHeight: '20px', textDecoration: 'underline' }}>
               {project.title}
             </div>
           </GridItem>,
 
           /* Project description - 1 row below title (3 rows below snap point) */
           <GridItem key={`${project.id}-desc`} col={isMobile ? 1 : rightColumn+1} row={adjustedTitleRow + 3} colSpan={isMobile ? 5 : 3} align="top-left">
-            <div style={{ fontSize: '20', lineHeight: '20px' }}>
+            <div className="project-description" style={{ fontSize: '20', lineHeight: '20px' }}>
               {project.description.split('\n').map((line, i) => (
                 <span key={i}>
                   {line}
@@ -537,6 +546,7 @@ function App() {
               navColumn={navPositions[project.id]?.column || rightColumn}
               rightColumn={rightColumn}
               isVisible={isVisible}
+              isMobile={isMobile}
               onCircleClick={(index) => {
                 carouselRefs.current[project.id]?.scrollToIndex(index)
               }}

@@ -29,10 +29,10 @@ const ProjectCarousel = forwardRef(({ items, titleRow, rightColumn, isMobile = f
   const maxRowsFromHeight = Math.floor((availableHeight + 20) / 80)
 
   // Take minimum of: width constraint, height constraint, and available columns
-  // On mobile, ignore rightColumn constraint to maximize carousel width
+  // In stacked mode: use full width with reasonable cap
   const maxAvailableColumns = Math.floor(rightColumn - 1)
   const carouselGridSize = isMobile
-    ? Math.max(3, Math.min(maxColumnsFromWidth, maxRowsFromHeight))  // Mobile: min 3×3, maximize width
+    ? Math.max(3, Math.min(maxColumnsFromWidth, maxRowsFromHeight, 5))  // Stacked: full width, capped at 5x5
     : Math.max(1, Math.min(maxColumnsFromWidth, maxRowsFromHeight, maxAvailableColumns))
 
   const carouselColSpan = carouselGridSize
@@ -115,7 +115,7 @@ const ProjectCarousel = forwardRef(({ items, titleRow, rightColumn, isMobile = f
   const navCol = isMobile ? 1 : navColumn
   useEffect(() => {
     onNavRowCalculated?.({ row: navRow, column: navCol })
-  }, [navRow, navCol, onNavRowCalculated])
+  }, [navRow, navCol]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep carousel at top when hidden, so it's already there when fading in
   useEffect(() => {
@@ -148,7 +148,7 @@ const ProjectCarousel = forwardRef(({ items, titleRow, rightColumn, isMobile = f
     >
       <div
         ref={carouselRef}
-        className={`project-carousel ${!isVisible ? 'hidden' : ''}`}
+        className={`project-carousel ${!isVisible ? 'hidden' : ''} ${isMobile ? 'horizontal' : ''}`}
         onWheel={handleWheel}
         style={{ height: `${carouselHeight}px` }}
       >
