@@ -12,8 +12,6 @@
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE/Edge */
 
-  /* Instant transition for project switching - no individual fade */
-  transition: opacity 0s;
   opacity: 1;
 }
 
@@ -21,7 +19,7 @@
   display: none; /* Chrome/Safari */
 }
 
-/* Hidden - instant opacity change for project switching */
+/* Hidden state - controlled by cloud state on narrow/desktop */
 .project-carousel.hidden {
   opacity: 0;
   pointer-events: none;

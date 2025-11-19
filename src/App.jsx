@@ -15,7 +15,8 @@ import './App.css'
 gsap.registerPlugin(ScrollToPlugin)
 
 // Layout constants
-const MOBILE_BREAKPOINT = 880
+const MOBILE_BREAKPOINT = 880 // Layout changes at this width
+const MOBILE_INTERACTIVITY_BREAKPOINT = 640 // Graph becomes non-interactive below this
 const GRID_CELL_HEIGHT = 80
 const MOBILE_PROJECT_OFFSET_ROWS = 20
 const SCROLL_DEBOUNCE_MS = 150
@@ -23,7 +24,7 @@ const PROJECT_SNAP_THRESHOLD = 1.5
 
 // Scroll threshold constants
 const HOMEPAGE_SCROLL_THRESHOLD_DESKTOP = 100
-const HOMEPAGE_SCROLL_THRESHOLD_MOBILE = 1040
+const HOMEPAGE_SCROLL_THRESHOLD_MOBILE = 100 // Graph starts collapsing after scrolling past 100px
 const CONTENT_VISIBILITY_THRESHOLD_MOBILE = 600
 
 // Helper functions
@@ -65,15 +66,17 @@ function App() {
   const dotCloudRef = useRef(null)
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < MOBILE_BREAKPOINT : false)
 
-  // Mobile detection
+  // Mobile/stacked orientation detection - based on column count, not just width
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+      // Stacked orientation when: narrow width OR few columns available
+      const isStacked = window.innerWidth < MOBILE_BREAKPOINT || rightColumn <= 9
+      setIsMobile(isStacked)
     }
     checkMobile()
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
-  }, [])
+  }, [rightColumn])
 
   // Mobile offset for projects - pushes first project below Work section
   const mobileProjectOffset = isMobile ? MOBILE_PROJECT_OFFSET_ROWS : 0
@@ -310,7 +313,7 @@ function App() {
   }
 
   // Generate snap points for scroll behavior
-  const mobileHomepageRows = isMobile ? [10] : []
+  const mobileHomepageRows = isMobile ? [11] : []
   const snapRows = [...new Set([2, ...mobileHomepageRows, ...projects.map(p => p.titleRow + mobileProjectOffset)])]
 
   // Map project IDs to snap point rows for cloud navigation
@@ -320,7 +323,7 @@ function App() {
   }, {})
 
   return (
-    <>
+    <>a
       {/* Custom cursor */}
       <CustomCursor />
 
@@ -328,7 +331,12 @@ function App() {
       <Grid show={false}/>
 
       {/* Dot Cloud Navigation Canvas */}
-      <DotCloudCanvas ref={dotCloudRef} projectSnapPoints={projectSnapPoints} />
+      <DotCloudCanvas
+        ref={dotCloudRef}
+        projectSnapPoints={projectSnapPoints}
+        mobileInteractivityBreakpoint={MOBILE_INTERACTIVITY_BREAKPOINT}
+        isStackedOrientation={isMobile}
+      />
 
       {/* Scroll snap points for gentle grid alignment */}
       <ScrollSnapPoints snapRows={snapRows} />
@@ -383,7 +391,7 @@ function App() {
       </div>
 
       {/* Grid Container - uses CSS Grid instead of absolute positioning */}
-      <GridContainer className={isCloudExpanded ? 'cloud-expanded' : 'cloud-collapsed'}>
+      <GridContainer className={`${isCloudExpanded ? 'cloud-expanded' : 'cloud-collapsed'} ${isMobile ? 'stacked' : 'sideways'}`}>
         {/* New header - scrolls normally, 3 columns from right */}
         <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? bottomRow+4 : 2} colSpan={isMobile ? 5 : 1} align="bottom-left">
           <div style={{

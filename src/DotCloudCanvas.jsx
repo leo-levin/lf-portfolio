@@ -13,7 +13,7 @@ import {
 import './DotCloudCanvas.css';
 
 const DotCloudCanvas = forwardRef((props, ref) => {
-  const { projectSnapPoints } = props;
+  const { projectSnapPoints, mobileInteractivityBreakpoint = 640, isStackedOrientation = false } = props;
   const containerRef = useRef(null);
   const nodesRef = useRef([]);
   const animationFrameRef = useRef(null);
@@ -23,6 +23,7 @@ const DotCloudCanvas = forwardRef((props, ref) => {
   const previousIsMobileRef = useRef(null);
   const [isExpanded, setIsExpanded] = useState(true); // Start expanded on homepage
   const [isMobile, setIsMobile] = useState(false);
+  const [isInteractivityDisabled, setIsInteractivityDisabled] = useState(false); // Separate state for interactivity
   const [currentSection, setCurrentSection] = useState('homepage');
   const [rotationAngle, setRotationAngle] = useState(0);
   const [categoryAlpha, setCategoryAlpha] = useState(1); // Category label opacity
@@ -101,11 +102,16 @@ const DotCloudCanvas = forwardRef((props, ref) => {
   const collapseCloud = useCallback(() => {
     const { anchorDot } = DOT_CLOUD_CONFIG;
 
+    // Faster animation in stacked orientation to avoid overlap with content page
+    const fadeDuration = isStackedOrientation ? 0 : 0.2; // Instant text fade when stacked
+    const moveDuration = isStackedOrientation ? 0.6 : 0.9; // Slightly slower movement when stacked
+    const stageDelay = isStackedOrientation ? 0 : 0.2; // No delay when stacked
+
     // Stage 1: Fade out ALL text (project labels AND category labels) quickly
     nodesRef.current.forEach((node) => {
       gsap.to(node, {
         textAlpha: 0,
-        duration: 0.2, // Faster fade
+        duration: fadeDuration,
         ease: 'power2.in',
       });
     });
@@ -113,14 +119,14 @@ const DotCloudCanvas = forwardRef((props, ref) => {
     // Fade out category labels - animate state directly
     gsap.to({ value: 1 }, {
       value: 0,
-      duration: 0.2, // Faster fade
+      duration: fadeDuration,
       ease: 'power2.in',
       onUpdate: function() {
         setCategoryAlpha(this.targets()[0].value);
       }
     });
 
-    // Stage 2: Move all dots to anchor after text fades (slower movement)
+    // Stage 2: Move all dots to anchor after text fades
     // Calculate offset to move from rotationCenter to anchorDot
     const offsetX = anchorDot.x - rotationCenter.x;
     const offsetY = anchorDot.y - rotationCenter.y;
@@ -129,8 +135,8 @@ const DotCloudCanvas = forwardRef((props, ref) => {
     gsap.to(offset, {
       x: offsetX,
       y: offsetY,
-      duration: 0.9, // Slower movement
-      delay: 0.2, // Start after faster text fade
+      duration: moveDuration,
+      delay: stageDelay,
       ease: 'power2.in',
       onUpdate: () => {
         setCollapseOffset({ ...offset });
@@ -140,8 +146,8 @@ const DotCloudCanvas = forwardRef((props, ref) => {
     nodesRef.current.forEach((node, index) => {
       gsap.to(node, {
         currentR: 0,
-        duration: 0.9, // Slower movement
-        delay: 0.2, // Start after faster text fade
+        duration: moveDuration,
+        delay: stageDelay,
         ease: 'power2.in',
         onComplete: () => {
           if (index === nodesRef.current.length - 1) {
@@ -150,7 +156,7 @@ const DotCloudCanvas = forwardRef((props, ref) => {
         },
       });
     });
-  }, [categoryAlpha, rotationCenter]);
+  }, [categoryAlpha, rotationCenter, isStackedOrientation]);
 
   // Expose expandCloud, collapseCloud, and isExpanded to parent via ref
   useImperativeHandle(ref, () => ({
@@ -171,13 +177,16 @@ const DotCloudCanvas = forwardRef((props, ref) => {
     // Stop propagation to prevent background collapse
     e.stopPropagation();
 
+    // In stacked orientation, collapse immediately for faster transition
+    if (isStackedOrientation && isExpanded) {
+      collapseCloud();
+    }
+
     // Use snap point position if available (scroll to snap point, not element)
     const snapRow = projectSnapPoints?.[targetSection];
     if (snapRow !== undefined) {
       const targetPosition = (snapRow - 1) * 80; // Grid rows start at 1, so subtract 1
 
-      // Don't collapse cloud immediately - let App.jsx handle it after scroll settles
-      // This ensures the cloud waits until we've arrived before collapsing
       setCurrentSection('project');
 
       // Temporarily disable scroll-snap during animation
@@ -200,7 +209,7 @@ const DotCloudCanvas = forwardRef((props, ref) => {
         }
       });
     }
-  }, [collapseCloud, projectSnapPoints]);
+  }, [collapseCloud, projectSnapPoints, isExpanded, isStackedOrientation]);
 
   // Calculate dynamic rotation center based on viewport
   useEffect(() => {
@@ -226,7 +235,7 @@ const DotCloudCanvas = forwardRef((props, ref) => {
     return () => window.removeEventListener('resize', updateRotationCenter);
   }, []);
 
-  // Check if mobile (< 880px = 9 columns)
+  // Check if mobile (< 880px = 9 columns) for layout
   useEffect(() => {
     const checkMobile = () => {
       const currentIsMobile = window.innerWidth < 880;
@@ -245,6 +254,18 @@ const DotCloudCanvas = forwardRef((props, ref) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Check if interactivity should be disabled (< mobileInteractivityBreakpoint)
+  useEffect(() => {
+    const checkInteractivity = () => {
+      const shouldDisable = window.innerWidth < mobileInteractivityBreakpoint;
+      setIsInteractivityDisabled(shouldDisable);
+    };
+    checkInteractivity();
+
+    window.addEventListener('resize', checkInteractivity);
+    return () => window.removeEventListener('resize', checkInteractivity);
+  }, [mobileInteractivityBreakpoint]);
+
   // Scroll detection
   useEffect(() => {
     const handleScroll = () => {
@@ -257,9 +278,8 @@ const DotCloudCanvas = forwardRef((props, ref) => {
 
       scrollTimeoutRef.current = setTimeout(() => {
         const scrollY = window.scrollY || window.pageYOffset;
-        // On mobile, collapse at row 12 (12-1)*80 = 880px (before row 14 snap)
-        // On desktop, collapse at scrollY > 100
-        const threshold = isMobile ? 600 : 100;
+        // Collapse after scrolling past threshold
+        const threshold = 100;
         const isHomepage = scrollY < threshold;
         const newSection = isHomepage ? 'homepage' : 'project';
 
@@ -271,7 +291,7 @@ const DotCloudCanvas = forwardRef((props, ref) => {
             collapseCloud();
           }
         }
-      }, 150);
+      }, 0); // No debounce - instant response
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -282,7 +302,7 @@ const DotCloudCanvas = forwardRef((props, ref) => {
         clearTimeout(scrollTimeoutRef.current);
       }
     };
-  }, [currentSection, isMobile, expandCloud, collapseCloud]);
+  }, [currentSection, isMobile, expandCloud, collapseCloud, isStackedOrientation]);
 
   // Rotation animation loop
   useEffect(() => {
@@ -303,7 +323,11 @@ const DotCloudCanvas = forwardRef((props, ref) => {
   }, []);
 
   return (
-    <div ref={containerRef} className="dot-cloud-container" {...(!isMobile && { onClick: handleBackgroundClick })}>
+    <div
+      ref={containerRef}
+      className={`dot-cloud-container ${!isExpanded && isMobile ? 'collapsed-mobile' : ''}`}
+      {...(!isInteractivityDisabled && { onClick: handleBackgroundClick })}
+    >
       {/* Category labels */}
       {isExpanded && categoryAlpha > 0.01 && CATEGORIES.map((category) => {
         const { r, theta } = cartesianToPolar(category.x, category.y);
@@ -338,7 +362,7 @@ const DotCloudCanvas = forwardRef((props, ref) => {
           <div
             key={node.id}
             className="project-node"
-            {...(!isMobile && { onClick: (e) => handleNodeClick(node.targetSection, e) })}
+            {...(!isInteractivityDisabled && { onClick: (e) => handleNodeClick(node.targetSection, e) })}
             style={{
               transform: `translate(${screenX}px, ${screenY}px)`,
             }}

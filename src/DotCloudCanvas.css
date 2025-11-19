@@ -55,8 +55,10 @@
   .dot-cloud-container {
     width: 80vw;
   }
+}
 
-  /* Make dot cloud non-interactive on mobile (but keep animation) */
+/* Disable interactivity on true mobile (< 640px) */
+@media (max-width: 640px) {
   .project-node {
     pointer-events: none;
     cursor: default;
