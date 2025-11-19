@@ -1,14 +1,14 @@
 import GridItem from './GridItem'
 import './CarouselNavigation.css'
 
-function CarouselNavigation({ activeIndex, itemCount, onCircleClick, navRow, navColumn, isVisible, waitForCloud }) {
+function CarouselNavigation({ activeIndex, itemCount, onCircleClick, navRow, navColumn, isVisible }) {
   return (
     <GridItem
       col={navColumn}
       row={navRow}
       align="top-left"
     >
-      <div className={`carousel-navigation ${!isVisible ? 'hidden' : ''} ${waitForCloud ? 'wait-for-cloud' : ''}`}>
+      <div className={`carousel-navigation ${!isVisible ? 'hidden' : ''}`}>
         {Array.from({ length: itemCount }).map((_, index) => (
           <button
             key={index}

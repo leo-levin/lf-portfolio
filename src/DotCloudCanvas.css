@@ -2,7 +2,7 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: 60vw;
+  width: 50vw;
   height: 100vh;
   pointer-events: none;
   z-index: 9999;
@@ -53,7 +53,7 @@
 
 @media (max-width: 880px) {
   .dot-cloud-container {
-    width: 100vw;
+    width: 80vw;
   }
 
   /* Make dot cloud non-interactive on mobile (but keep animation) */

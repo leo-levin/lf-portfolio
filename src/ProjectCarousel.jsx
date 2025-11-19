@@ -2,7 +2,7 @@ import { useRef, useState, useEffect, useImperativeHandle, forwardRef } from 're
 import GridItem from './GridItem'
 import './ProjectCarousel.css'
 
-const ProjectCarousel = forwardRef(({ items, titleRow, rightColumn, isMobile = false, isVisible, waitForCloud, onIndexChange, onNavRowCalculated }, ref) => {
+const ProjectCarousel = forwardRef(({ items, titleRow, rightColumn, isMobile = false, isVisible, onIndexChange, onNavRowCalculated }, ref) => {
   const carouselRef = useRef(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const wasVisibleRef = useRef(isVisible)
@@ -148,7 +148,7 @@ const ProjectCarousel = forwardRef(({ items, titleRow, rightColumn, isMobile = f
     >
       <div
         ref={carouselRef}
-        className={`project-carousel ${!isVisible ? 'hidden' : ''} ${waitForCloud ? 'wait-for-cloud' : ''}`}
+        className={`project-carousel ${!isVisible ? 'hidden' : ''}`}
         onWheel={handleWheel}
         style={{ height: `${carouselHeight}px` }}
       >

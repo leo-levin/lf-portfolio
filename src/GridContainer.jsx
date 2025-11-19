@@ -5,9 +5,9 @@ import './GridContainer.css'
  * GridContainer - Main grid layout container
  * Uses CSS Grid instead of absolute positioning for better text selection
  */
-function GridContainer({ children }) {
+function GridContainer({ children, className = '' }) {
   return (
-    <div className="grid-layout-container">
+    <div className={`grid-layout-container ${className}`}>
       {children}
     </div>
   )

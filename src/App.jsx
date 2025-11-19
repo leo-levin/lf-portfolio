@@ -14,16 +14,61 @@ import './App.css'
 
 gsap.registerPlugin(ScrollToPlugin)
 
+// Layout constants
+const MOBILE_BREAKPOINT = 880
+const GRID_CELL_HEIGHT = 80
+const MOBILE_PROJECT_OFFSET_ROWS = 20
+const SCROLL_DEBOUNCE_MS = 150
+const PROJECT_SNAP_THRESHOLD = 1.5
+
+// Scroll threshold constants
+const HOMEPAGE_SCROLL_THRESHOLD_DESKTOP = 100
+const HOMEPAGE_SCROLL_THRESHOLD_MOBILE = 1040
+const CONTENT_VISIBILITY_THRESHOLD_MOBILE = 600
+
+// Helper functions
+const scrollToRow = (scrollY) => (scrollY + GRID_CELL_HEIGHT) / GRID_CELL_HEIGHT
+
+const findClosestProject = (scrollRow, projects, mobileProjectOffset) => {
+  let closestProject = null
+  let closestDistance = Infinity
+
+  projects.forEach(project => {
+    if (project.carousel) {
+      const adjustedTitleRow = project.titleRow + mobileProjectOffset
+      const distance = Math.abs(adjustedTitleRow - scrollRow)
+      if (distance < closestDistance) {
+        closestDistance = distance
+        closestProject = project.id
+      }
+    }
+  })
+
+  return { closestProject, closestDistance }
+}
+
+const isAtProjectPage = (closestDistance) => closestDistance < PROJECT_SNAP_THRESHOLD
+
+const isOnHomepage = (scrollY, isMobile) => {
+  const threshold = isMobile ? HOMEPAGE_SCROLL_THRESHOLD_MOBILE : HOMEPAGE_SCROLL_THRESHOLD_DESKTOP
+  return scrollY < threshold
+}
+
+const shouldShowHomepageContent = (scrollY, isMobile) => {
+  const threshold = isMobile ? CONTENT_VISIBILITY_THRESHOLD_MOBILE : 0
+  return scrollY >= threshold
+}
+
 function App() {
   const { rightColumn, bottomRow } = useViewportColumns()
   const whiteDotRef = useRef(null)
   const dotCloudRef = useRef(null)
-  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 880 : false)
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < MOBILE_BREAKPOINT : false)
 
-  // Mobile detection (< 880px)
+  // Mobile detection
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 880)
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
     }
     checkMobile()
     window.addEventListener('resize', checkMobile)
@@ -31,7 +76,7 @@ function App() {
   }, [])
 
   // Mobile offset for projects - pushes first project below Work section
-  const mobileProjectOffset = isMobile ? 20 : 0
+  const mobileProjectOffset = isMobile ? MOBILE_PROJECT_OFFSET_ROWS : 0
 
   // Project data - easy to add/edit projects
   const projects = [
@@ -115,11 +160,10 @@ function App() {
   // Carousel state
   const [isCloudExpanded, setIsCloudExpanded] = useState(true) // Start as true (homepage)
   const [currentProjectId, setCurrentProjectId] = useState(null) // Track which project page we're on
-  const [shouldWaitForCloud, setShouldWaitForCloud] = useState(true) // Track if carousel should wait for cloud
   const [carouselIndices, setCarouselIndices] = useState({})
   const [navPositions, setNavPositions] = useState({}) // Track nav position for each project
   const [showHomepageContent, setShowHomepageContent] = useState(
-    typeof window !== 'undefined' ? window.innerWidth >= 880 : true
+    typeof window !== 'undefined' ? window.innerWidth >= MOBILE_BREAKPOINT : true
   ) // Homepage content visibility (start hidden on mobile)
   const carouselRefs = useRef({})
   const wasOnHomepageRef = useRef(true) // Track if we were on homepage in previous scroll
@@ -137,51 +181,27 @@ function App() {
 
       scrollTimeout = setTimeout(() => {
         const scrollY = window.scrollY || window.pageYOffset
-        const scrollRow = (scrollY + 80) / 80 // Convert scroll position to row number
+        const scrollRow = scrollToRow(scrollY)
 
-        // Find the project whose titleRow is closest to current scroll position
-        let closestProject = null
-        let closestDistance = Infinity
-
-        projects.forEach(project => {
-          if (project.carousel) {
-            // Use adjusted titleRow that accounts for mobile offset
-            const adjustedTitleRow = project.titleRow + mobileProjectOffset
-            const distance = Math.abs(adjustedTitleRow - scrollRow)
-            if (distance < closestDistance) {
-              closestDistance = distance
-              closestProject = project.id
-            }
-          }
-        })
-
-        // Check if we're at a project page (close to snap point)
-        const isAtProject = closestDistance < 1.5
-
-        // Determine if we should be on homepage (far from all projects)
-        // Mobile: use row 14 threshold (1040px), Desktop: use 100px
-        const homepageThreshold = isMobile ? 1040 : 100
-        const isHomepage = scrollY < homepageThreshold
-
-        // Separate threshold for showing homepage content (earlier than snap point)
-        // On mobile, show content when scrolling past row 12 (880px) - when cloud starts collapsing
-        const contentThreshold = isMobile ? 880 : 0
-        const shouldShowContent = scrollY >= contentThreshold
+        // Find closest project and calculate distances
+        const { closestProject, closestDistance } = findClosestProject(scrollRow, projects, mobileProjectOffset)
+        const isAtProject = isAtProjectPage(closestDistance)
+        const isHomepage = isOnHomepage(scrollY, isMobile)
+        const shouldShowContent = shouldShowHomepageContent(scrollY, isMobile)
 
         // Reset collapsing flag whenever cloud is expanded
         if (isCloudExpanded) {
           isCollapsingRef.current = false
         }
 
+        // Handle cloud state transitions
         if (isHomepage) {
-          // On homepage, keep cloud expanded and hide content
           if (!isCloudExpanded && dotCloudRef.current) {
             dotCloudRef.current.expandCloud()
           }
           setIsCloudExpanded(true)
           if (isMobile && !shouldShowContent) setShowHomepageContent(false)
         } else if (isAtProject && isCloudExpanded && !isCollapsingRef.current) {
-          // At a project page - collapse immediately (only once)
           isCollapsingRef.current = true
           if (dotCloudRef.current) {
             dotCloudRef.current.collapseCloud()
@@ -189,30 +209,22 @@ function App() {
           setIsCloudExpanded(false)
         }
 
-        // Show homepage content when past threshold (on mobile)
+        // Handle homepage content visibility (mobile)
         if (isMobile && shouldShowContent) {
           setShowHomepageContent(true)
         }
-        // Don't do anything if we're between pages (scrolling)
 
-        // Determine which project we're currently viewing
+        // Update current project tracking
         if (isAtProject) {
-
-          // Update state only when changing to a different project
           if (closestProject !== currentProjectId) {
-            // Should wait for cloud only if we were on homepage before
-            setShouldWaitForCloud(wasOnHomepageRef.current)
             setCurrentProjectId(closestProject)
           }
-
-          // Update ref - we're no longer on homepage
           wasOnHomepageRef.current = false
         } else {
           setCurrentProjectId(null)
-          setShouldWaitForCloud(true)
-          wasOnHomepageRef.current = true // We're on homepage
+          wasOnHomepageRef.current = true
         }
-      }, 150)
+      }, SCROLL_DEBOUNCE_MS)
     }
 
     window.addEventListener('scroll', handleScroll)
@@ -227,7 +239,6 @@ function App() {
     }
   }, [bottomRow]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Base text style with selection enabled
   const textStyle = {
     fontSize: '20',
     lineHeight: '20px',
@@ -236,7 +247,7 @@ function App() {
     MozUserSelect: 'text'
   }
 
-  // Pulsing animation for white dot
+  // White dot pulsing animation
   useEffect(() => {
     if (whiteDotRef.current) {
       gsap.to(whiteDotRef.current, {
@@ -244,22 +255,19 @@ function App() {
         duration: 0.5,
         yoyo: true,
         repeat: -1,
-        repeatDelay: 0.1, // Hold at brightest point for 0.4s
+        repeatDelay: 0.1,
         ease: 'power1.inOut'
       })
     }
   }, [])
 
-  // Handle white dot click - toggle cloud expand/collapse
+  // Toggle cloud expand/collapse
   const handleWhiteDotClick = () => {
     if (dotCloudRef.current) {
       if (dotCloudRef.current.isExpanded) {
-        // When manually collapsing cloud, carousel should wait for animation
-        setShouldWaitForCloud(true)
         dotCloudRef.current.collapseCloud()
         setIsCloudExpanded(false)
       } else {
-        // When expanding cloud, reset collapsing flag so it can collapse again later
         isCollapsingRef.current = false
         dotCloudRef.current.expandCloud()
         setIsCloudExpanded(true)
@@ -267,14 +275,14 @@ function App() {
     }
   }
 
-  // Handle "Leo Frankel" click - scroll to row 2
+  // Scroll to row 2 (Leo Frankel click)
   const handleNameClick = () => {
     const html = document.documentElement
     const originalScrollSnapType = html.style.scrollSnapType
     html.style.scrollSnapType = 'none'
 
     gsap.to(window, {
-      scrollTo: 80,
+      scrollTo: GRID_CELL_HEIGHT,
       duration: 1.5,
       ease: 'power2.inOut',
       onComplete: () => {
@@ -283,16 +291,13 @@ function App() {
     })
   }
 
-  // Handle "Work" click - scroll to first project section
+  // Scroll to first project (Work click)
   const handleWorkClick = () => {
-    // Scroll to the snap point position (not the element position)
-    // The snap point is 2 rows above where the actual content starts
     const html = document.documentElement
     const originalScrollSnapType = html.style.scrollSnapType
     html.style.scrollSnapType = 'none'
 
-    // Calculate scroll position based on grid rows (grid rows start at 1, so subtract 1)
-    const targetPosition = (bottomRow * 2 - 1) * 80
+    const targetPosition = (bottomRow * 2 - 1) * GRID_CELL_HEIGHT
 
     gsap.to(window, {
       scrollTo: targetPosition,
@@ -304,12 +309,11 @@ function App() {
     })
   }
 
-  // Generate snap points from project title rows (ensure unique)
-  // Generate snap points - on mobile, add ONE snap for homepage content
-  const mobileHomepageRows = isMobile ? [14] : []  // Single snap for New/About/Contact
+  // Generate snap points for scroll behavior
+  const mobileHomepageRows = isMobile ? [10] : []
   const snapRows = [...new Set([2, ...mobileHomepageRows, ...projects.map(p => p.titleRow + mobileProjectOffset)])]
 
-  // Create mapping of project id -> snap point row for cloud navigation
+  // Map project IDs to snap point rows for cloud navigation
   const projectSnapPoints = projects.reduce((acc, project) => {
     acc[project.id] = project.titleRow + mobileProjectOffset
     return acc
@@ -321,7 +325,7 @@ function App() {
       <CustomCursor />
 
       {/* Visual grid guides - set show={false} to hide in production */}
-      <Grid show={true}/>
+      <Grid show={false}/>
 
       {/* Dot Cloud Navigation Canvas */}
       <DotCloudCanvas ref={dotCloudRef} projectSnapPoints={projectSnapPoints} />
@@ -379,25 +383,24 @@ function App() {
       </div>
 
       {/* Grid Container - uses CSS Grid instead of absolute positioning */}
-      <GridContainer>
+      <GridContainer className={isCloudExpanded ? 'cloud-expanded' : 'cloud-collapsed'}>
         {/* New header - scrolls normally, 3 columns from right */}
-        <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? 15 : 2} colSpan={isMobile ? 5 : 1} align="bottom-left">
+        <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? bottomRow+4 : 2} colSpan={isMobile ? 5 : 1} align="bottom-left">
           <div style={{
             fontSize: '20',
             lineHeight: '20px',
             textDecoration: 'underline',
-            opacity: isMobile ? (showHomepageContent ? 1 : 0) : 1,
-            transition: isMobile ? 'opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s' : 'none'
           }}>
             New
           </div>
         </GridItem>
 
-      <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? 16 : 3} colSpan={isMobile ? 5 : 3} align="top-left">
+      <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? bottomRow+5 : 3} colSpan={isMobile ? 5 : 3} align="top-left">
         <div style={{
           ...textStyle,
-          opacity: isMobile ? (showHomepageContent ? 1 : 0) : 1,
-          transition: isMobile ? 'opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s' : 'none'
+          wordWrap: 'break-word',
+          whiteSpace: 'normal',
+          maxWidth: '100%'
         }}>
           Currently working on <a href="https://leo-levin.github.io/weft/public/index.html" target="_blank" rel="noopener noreferrer" className="resume-link">WEFT➚</a>, a media-agnostic creative coding language.
         </div>
@@ -405,37 +408,34 @@ function App() {
 
 
 
-      <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? 18 : 5} colSpan={isMobile ? 5 : 1} align="bottom-left">
+      <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? bottomRow+1 : 5} colSpan={isMobile ? 5 : 1} align="bottom-left">
         <div style={{
           fontSize: '20',
           lineHeight: '20px',
           textDecoration: 'underline',
-          opacity: isMobile ? (showHomepageContent ? 1 : 0) : 1,
-          transition: isMobile ? 'opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s' : 'none'
         }}>
           About
         </div>
       </GridItem>
 
-      <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? 19 : 6} colSpan={isMobile ? 5 : 3} align="top-left">
+      <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? bottomRow+2 : 6} colSpan={isMobile ? 5 : 3} align="top-left">
         <div style={{
           fontSize: '20',
           lineHeight: '20px',
-          opacity: isMobile ? (showHomepageContent ? 1 : 0) : 1,
-          transition: isMobile ? 'opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s' : 'none'
+          wordWrap: 'break-word',
+          whiteSpace: 'normal',
+          maxWidth: '100%'
         }}>
           I think in systems. Junior at UChicago studying math and CS. Currently designing at <a href="https://www.doralicedoralice.com" target="_blank" rel="noopener noreferrer" className="resume-link">Doralice➚</a><br />
         </div>
       </GridItem>
 
       {/* Contact header - scrolls normally */}
-      <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? 21 : 8} colSpan={isMobile ? 5 : 1} align="bottom-left">
+      <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? bottomRow+7 : 8} colSpan={isMobile ? 5 : 1} align="bottom-left">
         <div style={{
           fontSize: '20',
           lineHeight: '20px',
           textDecoration: 'underline',
-          opacity: isMobile ? (showHomepageContent ? 1 : 0) : 1,
-          transition: isMobile ? 'opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s' : 'none'
         }}>
           Contact
         </div>
@@ -443,12 +443,13 @@ function App() {
 
 
 
-      <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? 22 : 9} colSpan={isMobile ? 5 : 3} align="top-left">
+      <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? bottomRow+8 : 9} colSpan={isMobile ? 5 : 3} align="top-left">
         <div style={{
           fontSize: '20',
           lineHeight: '20px',
-          opacity: isMobile ? (showHomepageContent ? 1 : 0) : 1,
-          transition: isMobile ? 'opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s' : 'none'
+          wordWrap: 'break-word',
+          whiteSpace: 'normal',
+          maxWidth: '100%'
         }}>
           leolfrankel@gmail.com<br />
           310 463 2774<br />
@@ -460,7 +461,7 @@ function App() {
       </GridItem>
 
       {/* Work - Page 1 */}
-      <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? 24 : bottomRow} colSpan={isMobile ? 5 : 3} align="bottom-left">
+      <GridItem col={isMobile ? 1 : rightColumn+1} row={isMobile ? bottomRow+10 : bottomRow} colSpan={isMobile ? 5 : 3} align="bottom-left">
         <div
           onClick={handleWorkClick}
           style={{
@@ -468,8 +469,6 @@ function App() {
             lineHeight: '20px',
             textDecoration: 'underline',
             cursor: 'pointer',
-            opacity: isMobile ? (showHomepageContent ? 1 : 0) : 1,
-            transition: isMobile ? 'opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s' : 'none'
           }}
         >
           Work
@@ -502,8 +501,9 @@ function App() {
 
         // Add carousel if project has carousel data
         if (project.carousel) {
-          const isCurrentProject = currentProjectId === project.id
-          const isVisible = isCurrentProject && !isCloudExpanded
+          // All carousels visible together when cloud is collapsed (any project page)
+          // All carousels hidden together when cloud is expanded (homepage)
+          const isVisible = !isCloudExpanded
 
           elements.push(
             <ProjectCarousel
@@ -514,7 +514,6 @@ function App() {
               rightColumn={rightColumn}
               isMobile={isMobile}
               isVisible={isVisible}
-              waitForCloud={shouldWaitForCloud}
               onIndexChange={(index) => {
                 setCarouselIndices(prev => ({ ...prev, [project.id]: index }))
               }}
@@ -530,7 +529,6 @@ function App() {
               navColumn={navPositions[project.id]?.column || rightColumn}
               rightColumn={rightColumn}
               isVisible={isVisible}
-              waitForCloud={shouldWaitForCloud}
               onCircleClick={(index) => {
                 carouselRefs.current[project.id]?.scrollToIndex(index)
               }}
