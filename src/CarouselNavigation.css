@@ -40,7 +40,7 @@
 }
 
 .carousel-navigation.horizontal .nav-circle {
-  cursor: default;
+  cursor: none;
 }
 
 /* Legacy media query for backwards compatibility */

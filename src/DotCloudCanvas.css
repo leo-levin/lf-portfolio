@@ -61,7 +61,7 @@
 @media (max-width: 640px) {
   .project-node {
     pointer-events: none;
-    cursor: default;
+    cursor: none;
   }
 
   .project-node:hover .node-dot {
