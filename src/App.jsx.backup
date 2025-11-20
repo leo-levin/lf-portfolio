@@ -177,7 +177,6 @@ function App() {
   const carouselRefs = useRef({})
   const wasOnHomepageRef = useRef(true) // Track if we were on homepage in previous scroll
   const isCollapsingRef = useRef(false) // Track if cloud is currently collapsing
-  const manuallyExpandedRef = useRef(false) // Track if cloud was manually expanded
 
   // Track scroll position to sync carousel visibility with cloud state and current project
   useEffect(() => {
@@ -210,18 +209,16 @@ function App() {
             dotCloudRef.current.expandCloud()
           }
           setIsCloudExpanded(true)
-          manuallyExpandedRef.current = false // Reset manual flag on homepage
           if (isMobile && !shouldShowContent) setShowHomepageContent(false)
         } else {
-          // Not on homepage - only auto-collapse if not manually expanded
-
-          if (isCloudExpanded && !isCollapsingRef.current && !manuallyExpandedRef.current) {
+          // Not on homepage - collapse cloud
+          if (isCloudExpanded && !isCollapsingRef.current) {
             isCollapsingRef.current = true
             if (dotCloudRef.current) {
               dotCloudRef.current.collapseCloud()
             }
-            setIsCloudExpanded(false)
           }
+          setIsCloudExpanded(false)
         }
 
         // Handle homepage content visibility (mobile)
@@ -280,13 +277,10 @@ function App() {
   const handleWhiteDotClick = () => {
     if (dotCloudRef.current) {
       if (dotCloudRef.current.isExpanded) {
-        isCollapsingRef.current = true
-        // Don't reset manuallyExpanded here - keep it true to prevent auto-collapse
         dotCloudRef.current.collapseCloud()
         setIsCloudExpanded(false)
       } else {
         isCollapsingRef.current = false
-        manuallyExpandedRef.current = true
         dotCloudRef.current.expandCloud()
         setIsCloudExpanded(true)
       }
@@ -339,7 +333,7 @@ function App() {
 
   return (
     <>
-      {/* Custom cursor */}n
+      {/* Custom cursor */}
       <CustomCursor />
 
       {/* Visual grid guides - set show={false} to hide in production */}

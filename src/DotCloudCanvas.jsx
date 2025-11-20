@@ -217,8 +217,8 @@ const DotCloudCanvas = forwardRef((props, ref) => {
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
 
-      // Container is 100vw on mobile, 60vw on desktop
-      const containerWidthPercent = viewportWidth < 880 ? 1.0 : 0.6;
+      // Container is 80vw on mobile, 50vw on desktop
+      const containerWidthPercent = viewportWidth < 880 ? 0.8 : 0.5;
       const containerWidth = viewportWidth * containerWidthPercent;
 
       // Center horizontally within container
@@ -279,7 +279,7 @@ const DotCloudCanvas = forwardRef((props, ref) => {
       scrollTimeoutRef.current = setTimeout(() => {
         const scrollY = window.scrollY || window.pageYOffset;
         // Collapse after scrolling past threshold
-        const threshold = 100;
+        const threshold = 600;
         const isHomepage = scrollY < threshold;
         const newSection = isHomepage ? 'homepage' : 'project';
 

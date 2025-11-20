@@ -1,6 +1,9 @@
 #root {
   margin: 0;
   padding: 0;
+  padding-bottom: 400px;
+  background-color: #AFAFAF;
+  min-height: 100vh;
 }
 
 .resume-link {
@@ -10,7 +13,7 @@
 }
 
 .resume-link:hover {
-  opacity: 0.6;
+  opacity: 0.7;
 }
 
 .resume-link:visited {
@@ -53,5 +56,5 @@
 .stacked.cloud-collapsed .project-title,
 .stacked.cloud-collapsed .project-description {
   opacity: 1 !important;
-  transition: none !important; /* Instant appearance when scrolling to projects */
+  transition: opacity 0.2s ease 0.15s !important;
 }

@@ -54,6 +54,7 @@
 @media (max-width: 880px) {
   .dot-cloud-container {
     width: 80vw;
+    left: 5vw;
   }
 }
 
