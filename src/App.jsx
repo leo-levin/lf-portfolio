@@ -208,13 +208,14 @@ function App() {
         if (isHomepage) {
           if (!isCloudExpanded && dotCloudRef.current) {
             dotCloudRef.current.expandCloud()
+            setIsCloudExpanded(true)
           }
-          setIsCloudExpanded(true)
+          // Always reset flags when on homepage to prevent immediate collapse
+          isCollapsingRef.current = false
           manuallyExpandedRef.current = false // Reset manual flag on homepage
           if (isMobile && !shouldShowContent) setShowHomepageContent(false)
         } else {
           // Not on homepage - only auto-collapse if not manually expanded
-
           if (isCloudExpanded && !isCollapsingRef.current && !manuallyExpandedRef.current) {
             isCollapsingRef.current = true
             if (dotCloudRef.current) {
